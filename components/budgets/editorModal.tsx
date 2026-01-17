@@ -101,7 +101,7 @@ export function BudgetEditorModal({
               },
             ]}
           >
-            <View style={[styles.iconWrap, { backgroundColor: meta.bg }]}>
+            <View style={[styles.iconWrap, { backgroundColor: meta.color }]}>
               <Ionicons
                 name={meta.iconName}
                 size={22}

@@ -18,8 +18,8 @@ import { TransactionRow } from "@/components/homeScreen/transactionRow";
 import { Fab } from "@/components/homeScreen/fab";
 import { TransactionSummaryModal } from "@/components/homeScreen/transactionSummaryModal";
 import { EmptyState } from "@/components/analysis/emptyState";
-import { useAtomValue } from "jotai";
-import { TransactionsAtom } from "@/contexts/init";
+import { useAtomValue, useSetAtom } from "jotai";
+import { DeleteTransactionAtom, TransactionsAtom } from "@/contexts/init";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -51,12 +51,13 @@ export default function RecordsScreen(): React.ReactElement {
   const [month, setMonth] = useState<Date>(() => new Date(2026, 0, 1));
 
   const transactions = useAtomValue(TransactionsAtom);
+  const deleteTransaction = useSetAtom(DeleteTransactionAtom);
 
   const monthTxns = useMemo(() => {
     return transactions
       .filter((t) => isSameMonth(t.occurredAt, month))
       .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
-  }, [month]);
+  }, [month, transactions]);
 
   const sections = useMemo<TxnSection[]>(() => {
     const map = new Map<
@@ -166,7 +167,10 @@ export default function RecordsScreen(): React.ReactElement {
         txn={selectedTxn}
         onClose={closeTxn}
         // TODO: optional later:
-        // onDelete={(t) => { ... }}
+        onDelete={(t) => {
+          deleteTransaction(t.id);
+          closeTxn();
+        }}
       />
     </View>
   );

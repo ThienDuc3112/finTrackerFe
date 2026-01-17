@@ -29,7 +29,7 @@ import {
 import { formatMoney, uid } from "@/components/txn/scan/utils";
 import {
   normalizePaymentMethod,
-  postReceiptImageStub,
+  postReceiptImage,
 } from "@/components/txn/scan/api";
 import { ReceiptSourceSheet } from "@/components/txn/scan/sheets/source";
 import { MetadataEditorSheet } from "@/components/txn/scan/sheets/metadataEditor";
@@ -156,13 +156,14 @@ export default function ScanReceiptScreen() {
       setLoading(true);
       setApiData(null);
       try {
-        const data = await postReceiptImageStub(imageUri);
+        const data = await postReceiptImage(imageUri);
         if (!alive) return;
         setApiData(data);
         initFromApi(data);
-      } catch {
+      } catch (e) {
         if (!alive) return;
         Alert.alert("Failed", "Could not parse receipt (stub).");
+        console.error(e);
       } finally {
         if (alive) setLoading(false);
       }
@@ -472,7 +473,7 @@ export default function ScanReceiptScreen() {
         }}
         onRemove={
           itemEditor.mode === "edit" && itemEditor.lineId
-            ? () => removeItem(itemEditor.lineId)
+            ? () => removeItem(itemEditor.lineId ?? "")
             : undefined
         }
       />
@@ -492,11 +493,6 @@ export default function ScanReceiptScreen() {
                   style={{ color: theme.colors.onSurface, fontWeight: "700" }}
                 >
                   Image selected
-                </Text>
-                <Text
-                  style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
-                >
-                  Uses native camera/gallery picker (chat-app style).
                 </Text>
 
                 <View

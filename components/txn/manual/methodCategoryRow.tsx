@@ -90,7 +90,7 @@ export function MethodCategoryRow(props: { theme: MaterialTheme; form: any }) {
               theme={theme}
               title="Category"
               visible={pickCategory}
-              items={categories}
+              items={categories.map((c) => c.name)}
               selected={field.state.value ?? "Other"}
               onClose={() => setPickCategory(false)}
               onPick={(v) => {

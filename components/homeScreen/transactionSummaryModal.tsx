@@ -219,7 +219,7 @@ export function TransactionSummaryModal({
                   style={[
                     styles.chipIconBox,
                     {
-                      backgroundColor: cat.bg,
+                      backgroundColor: cat.color,
                       borderColor: theme.colors.outline,
                       borderRadius: theme.radius.sm,
                     },

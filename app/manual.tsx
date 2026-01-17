@@ -2,6 +2,7 @@ import React from "react";
 import { Alert, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm } from "@tanstack/react-form";
+import uuid from "react-native-uuid";
 
 import { useTheme } from "@/hooks/use-theme";
 import { makeStyles } from "@/components/txn/manual/styles";
@@ -12,10 +13,13 @@ import { TopBar } from "@/components/txn/manual/topBar";
 import { MethodCategoryRow } from "@/components/txn/manual/methodCategoryRow";
 import { MerchantNoteInputs } from "@/components/txn/manual/merchantNoteInputs";
 import { AmountKeypad } from "@/components/txn/manual/amountKeypad";
+import { useSetAtom } from "jotai";
+import { UpsertTransactionAtom } from "@/contexts/init";
 
 export default function ManualTxnPage(): React.ReactElement {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const upsertTxn = useSetAtom(UpsertTransactionAtom);
 
   const form = useForm({
     defaultValues: {
@@ -54,8 +58,18 @@ export default function ManualTxnPage(): React.ReactElement {
         note: value.note ?? "",
       };
 
-      // TODO: call your API/store
-      Alert.alert("TxnInput", JSON.stringify(payload, null, 2));
+      await upsertTxn({
+        amount: -payload.amount,
+        category: payload.category ?? ("other" as any),
+        occurredAt: payload.occurredAt,
+        note: payload.note,
+        merchant: payload.merchant ?? "",
+        currency: payload.currency,
+        id: uuid.v4(),
+        method: payload.method ?? "card",
+        aiComment: "",
+      });
+
       router.back();
     },
   });

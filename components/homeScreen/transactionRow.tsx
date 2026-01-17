@@ -33,7 +33,7 @@ export function TransactionRow({ theme, item, onPress }: Props) {
       <View
         style={[
           styles.iconWrap,
-          { backgroundColor: meta.bg, borderRadius: theme.radius.pill },
+          { backgroundColor: meta.color, borderRadius: theme.radius.pill },
         ]}
       >
         <Ionicons name={meta.iconName} size={22} color="#fff" />

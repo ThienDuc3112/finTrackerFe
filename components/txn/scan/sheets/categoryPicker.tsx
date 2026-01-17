@@ -10,11 +10,12 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
 import { btnStyle, btnTextStyle, cardStyle, makeStyles } from "../styles";
+import { Category } from "@/types/money";
 
 type Props = {
   theme: MaterialTheme;
   visible: boolean;
-  categories: readonly string[];
+  categories: readonly Category[];
   initialValue: string | null;
   onPick: (value: string) => void;
   onClose: () => void;
@@ -58,11 +59,11 @@ export function CategoryPickerSheet({
           <ScrollView style={{ maxHeight: 320 }}>
             {categories.map((c) => {
               const selected =
-                (initialValue || "").toLowerCase() === c.toLowerCase();
+                (initialValue || "").toLowerCase() === c.name.toLowerCase();
               return (
                 <Pressable
-                  key={c}
-                  onPress={() => onPick(c)}
+                  key={c.name}
+                  onPress={() => onPick(c.name)}
                   android_ripple={{ color: theme.colors.ripple }}
                   style={[
                     s.categoryRow,
@@ -72,7 +73,7 @@ export function CategoryPickerSheet({
                   <Text
                     style={{ color: theme.colors.onSurface, fontWeight: "700" }}
                   >
-                    {c}
+                    {c.name}
                   </Text>
                   {selected ? (
                     <MaterialIcons

@@ -45,4 +45,8 @@ export type Currency = (typeof CURRENCIES)[number];
 export type Method = (typeof METHODS)[number];
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
-export type CategoryMeta = { bg: string; iconName: IoniconName };
+export type Category = {
+  name: string;
+  colorKey: string;
+  iconName: IoniconName;
+};

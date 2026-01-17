@@ -36,7 +36,26 @@ export type MaterialColors = {
   onSuccess: string;
 
   ripple: string;
+
+  otherColors: {
+    rosewater: string;
+    flamingo: string;
+    pink: string;
+    mauve: string;
+    red: string;
+    maroon: string;
+    peach: string;
+    yellow: string;
+    green: string;
+    teal: string;
+    sky: string;
+    sapphire: string;
+    blue: string;
+    lavender: string;
+  };
 };
+
+export type OtherColorKey = keyof MaterialColors["otherColors"];
 
 export type MaterialTheme = {
   scheme: AppColorScheme;
@@ -160,6 +179,8 @@ const mdLight: MaterialColors = {
   onSuccess: latte.crust,
 
   ripple: "rgba(202,158,230,0.18)",
+
+  otherColors: latte,
 };
 
 const mdDark: MaterialColors = {
@@ -192,6 +213,8 @@ const mdDark: MaterialColors = {
   onSuccess: macchiato.crust,
 
   ripple: "rgba(198,160,246,0.18)",
+
+  otherColors: macchiato,
 };
 
 export const Colors = {

@@ -66,7 +66,7 @@ export default function BudgetsScreen(): React.ReactElement {
   }, [budgets]);
 
   const notBudgeted = React.useMemo(() => {
-    return categories.filter((c) => !budgetedCategorySet.has(c));
+    return categories.filter((c) => !budgetedCategorySet.has(c.name));
   }, [categories, budgetedCategorySet]);
 
   const currency: CurrencyCode = budgets[0]?.currency ?? "SGD";
@@ -243,11 +243,11 @@ export default function BudgetsScreen(): React.ReactElement {
             ]}
           >
             {notBudgeted.map((category, idx) => (
-              <View key={category}>
+              <View key={category.name}>
                 <NotBudgetedRow
                   theme={theme}
-                  category={category}
-                  onSetBudget={() => openAddBudget(category)}
+                  category={category.name}
+                  onSetBudget={() => openAddBudget(category.name)}
                 />
                 {idx !== notBudgeted.length - 1 ? (
                   <View
