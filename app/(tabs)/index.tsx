@@ -16,9 +16,10 @@ import { SummaryCard } from "@/components/homeScreen/summaryCard";
 import { SectionHeader } from "@/components/homeScreen/sectionHeader";
 import { TransactionRow } from "@/components/homeScreen/transactionRow";
 import { Fab } from "@/components/homeScreen/fab";
-import { SAMPLE } from "@/sampleData/sample";
 import { TransactionSummaryModal } from "@/components/homeScreen/transactionSummaryModal";
 import { EmptyState } from "@/components/analysis/emptyState";
+import { useAtomValue } from "jotai";
+import { TransactionsAtom } from "@/contexts/init";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -49,10 +50,12 @@ export default function RecordsScreen(): React.ReactElement {
   const closeTxn = useCallback(() => setSelectedTxn(null), []);
   const [month, setMonth] = useState<Date>(() => new Date(2026, 0, 1));
 
+  const transactions = useAtomValue(TransactionsAtom);
+
   const monthTxns = useMemo(() => {
-    return SAMPLE.filter((t) => isSameMonth(t.occurredAt, month)).sort(
-      (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
-    );
+    return transactions
+      .filter((t) => isSameMonth(t.occurredAt, month))
+      .sort((a, b) => b.occurredAt.getTime() - a.occurredAt.getTime());
   }, [month]);
 
   const sections = useMemo<TxnSection[]>(() => {

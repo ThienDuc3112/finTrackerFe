@@ -1,3 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
+import { ComponentProps } from "react";
+
 export type PaymentMethod = "Card" | "Cash" | "Transfer";
 
 export type TxnSection = {
@@ -37,16 +40,9 @@ export type TxnInput = {
 
 export const CURRENCIES = ["SGD", "USD", "MYR"] as const;
 export const METHODS = ["Card", "Cash", "Transfer"] as const;
-export const CATEGORIES = [
-  "Food",
-  "Drinks",
-  "Transport",
-  "Shopping",
-  "Bills",
-  "Salary",
-  "Other",
-] as const;
 
 export type Currency = (typeof CURRENCIES)[number];
 export type Method = (typeof METHODS)[number];
-export type Category = (typeof CATEGORIES)[number];
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
+export type CategoryMeta = { bg: string; iconName: IoniconName };

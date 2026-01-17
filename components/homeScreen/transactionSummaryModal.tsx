@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import type { MaterialTheme } from "@/constants/theme";
 import type { Transaction } from "@/types/money";
+import { categoryMeta } from "@/contexts/init";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -14,23 +15,6 @@ type Props = {
   onClose: () => void;
   onEdit?: (txn: Transaction) => void;
   onDelete?: (txn: Transaction) => void;
-};
-
-type CategoryMeta = { bg: string; iconName: IoniconName };
-
-const categoryMeta = (theme: MaterialTheme, category: string): CategoryMeta => {
-  switch (category) {
-    case "Food":
-      return { bg: theme.colors.error, iconName: "restaurant" };
-    case "Drinks":
-      return { bg: theme.colors.error, iconName: "cafe" };
-    case "Transportation":
-      return { bg: theme.colors.secondary, iconName: "bus" };
-    case "Games":
-      return { bg: theme.colors.success, iconName: "tennisball" };
-    default:
-      return { bg: theme.colors.outline, iconName: "pricetag" };
-  }
 };
 
 const methodIcon = (method: string): IoniconName => {

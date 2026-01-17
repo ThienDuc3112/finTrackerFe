@@ -1,11 +1,9 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/use-theme";
 import type { Transaction } from "@/types/money";
 
-import { SAMPLE } from "@/sampleData/sample"; // <-- move your SAMPLE into data/sample.ts
 import { MonthNav } from "@/components/common/monthNav";
 import { ExpenseOverview } from "@/components/analysis/overview";
 
@@ -14,8 +12,9 @@ import { addMonths, monthTitle, formatMoneySGD } from "@/utils/money";
 import { EmptyState } from "@/components/analysis/emptyState";
 
 // OPTIONAL: if you use jotai for selected category highlight
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { selectedCategoryAtom } from "@/components/analysis/state";
+import { TransactionsAtom } from "@/contexts/init";
 
 type CategoryAgg = {
   category: string;
@@ -84,14 +83,17 @@ export default function AnalysisScreen(): React.ReactElement {
   const theme = useTheme();
 
   // Default to the latest month in SAMPLE (Jan 2026 in your data)
-  const [month, setMonth] = React.useState<Date>(() => getLatestMonth(SAMPLE));
+  const transactions = useAtomValue(TransactionsAtom);
+  const [month, setMonth] = React.useState<Date>(() =>
+    getLatestMonth(transactions),
+  );
 
   // OPTIONAL (jotai): clear selected category when changing month
   const clearSelected = useSetAtom(selectedCategoryAtom);
 
   const { byCategory /*, expenseAbs, income, total */ } = React.useMemo(
-    () => buildExpenseByCategory(SAMPLE, month),
-    [month],
+    () => buildExpenseByCategory(transactions, month),
+    [month, transactions],
   );
 
   return (

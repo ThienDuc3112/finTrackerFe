@@ -4,11 +4,14 @@ import { MaterialIcons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
 import { makeStyles } from "./styles";
 import { PickerModal } from "./pickerModal";
-import { CATEGORIES, METHODS } from "@/types/money";
+import { METHODS } from "@/types/money";
+import { useAtomValue } from "jotai";
+import { CategoriesAtom } from "@/contexts/init";
 
 export function MethodCategoryRow(props: { theme: MaterialTheme; form: any }) {
   const { theme, form } = props;
   const styles = makeStyles(theme);
+  const categories = useAtomValue(CategoriesAtom);
 
   const [pickMethod, setPickMethod] = React.useState(false);
   const [pickCategory, setPickCategory] = React.useState(false);
@@ -87,7 +90,7 @@ export function MethodCategoryRow(props: { theme: MaterialTheme; form: any }) {
               theme={theme}
               title="Category"
               visible={pickCategory}
-              items={CATEGORIES}
+              items={categories}
               selected={field.state.value ?? "Other"}
               onClose={() => setPickCategory(false)}
               onPick={(v) => {

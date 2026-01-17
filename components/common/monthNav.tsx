@@ -33,9 +33,11 @@ export function MonthNav({
         />
       </Pressable>
 
+      <View style={{ flex: 1 }} />
       <Text style={[styles.label, { color: theme.colors.primary }]}>
         {label}
       </Text>
+      <View style={{ flex: 1 }} />
 
       <Pressable
         onPress={onNext}
@@ -50,16 +52,16 @@ export function MonthNav({
         />
       </Pressable>
 
-      <View style={{ flex: 1 }} />
-
-      <Pressable
-        onPress={onFilter}
-        hitSlop={10}
-        android_ripple={{ color: theme.colors.ripple, borderless: true }}
-        style={styles.btn}
-      >
-        <MaterialIcons name="tune" size={22} color={theme.colors.primary} />
-      </Pressable>
+      {
+        // <Pressable
+        //   onPress={onFilter}
+        //   hitSlop={10}
+        //   android_ripple={{ color: theme.colors.ripple, borderless: true }}
+        //   style={styles.btn}
+        // >
+        //   <MaterialIcons name="tune" size={22} color={theme.colors.primary} />
+        // </Pressable>
+      }
     </View>
   );
 }
