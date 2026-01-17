@@ -50,11 +50,11 @@ export function Fab({ theme, bottom = 86 }: Props): React.ReactElement {
   };
 
   const actions = [
-    {
-      label: "Speech2Text",
-      icon: "keyboard-voice" as const,
-      onPress: actionPress(() => router.push("/speechToText")),
-    },
+    // {
+    //   label: "Speech2Text",
+    //   icon: "keyboard-voice" as const,
+    //   onPress: actionPress(() => router.push("/speechToText")),
+    // },
     {
       label: "Auto",
       icon: "auto-awesome" as const,

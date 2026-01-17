@@ -7,11 +7,7 @@ import { makeStyles } from "./styles";
 import { fmtHeader } from "./utils";
 import { DateTimeModal } from "./dateTimeModal";
 
-export function TopBar(props: {
-  theme: MaterialTheme;
-  // tanstack form instance (typed in your screen)
-  form: any;
-}) {
+export function TopBar(props: { theme: MaterialTheme; form: any }) {
   const { theme, form } = props;
   const styles = makeStyles(theme);
 

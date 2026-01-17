@@ -13,7 +13,7 @@ export default function TabLayout() {
 
   const renderHeader = React.useCallback(
     (_props: any) => {
-      const title = "placeholder";
+      const title = "FinAunty";
 
       return (
         <SafeAreaView
