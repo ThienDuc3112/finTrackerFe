@@ -118,64 +118,55 @@ export default function RecordsScreen(): React.ReactElement {
   }, [summary, theme.colors.error, theme.colors.success]);
 
   return (
-    <SafeAreaView
-      style={[styles.safe, { backgroundColor: theme.colors.background }]}
-      edges={["top"]}
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
+      <MonthNav
+        theme={theme}
+        label={monthTitle(month)}
+        onPrev={() => setMonth((m) => addMonths(m, -1))}
+        onNext={() => setMonth((m) => addMonths(m, +1))}
+      />
+
+      <SummaryCard theme={theme} items={summaryItems} />
+
       <View
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
-      >
-        <View style={{ paddingTop: Platform.OS === "android" ? 8 : 0 }}>
-          <TopAppBar theme={theme} title="Placeholder" />
-        </View>
+        style={{
+          height: 1,
+          backgroundColor: theme.colors.divider,
+          marginTop: 12,
+        }}
+      />
 
-        <MonthNav
-          theme={theme}
-          label={monthTitle(month)}
-          onPrev={() => setMonth((m) => addMonths(m, -1))}
-          onNext={() => setMonth((m) => addMonths(m, +1))}
-        />
+      <SectionList<Transaction, TxnSection>
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 140 }}
+        renderSectionHeader={({
+          section,
+        }: {
+          section: SectionListData<Transaction, TxnSection>;
+        }) => <SectionHeader theme={theme} title={section.title} />}
+        renderItem={(
+          info: SectionListRenderItemInfo<Transaction, TxnSection>,
+        ) => (
+          <TransactionRow theme={theme} item={info.item} onPress={openTxn} />
+        )}
+      />
 
-        <SummaryCard theme={theme} items={summaryItems} />
+      <Fab theme={theme} bottom={24} />
 
-        <View
-          style={{
-            height: 1,
-            backgroundColor: theme.colors.divider,
-            marginTop: 12,
-          }}
-        />
-
-        <SectionList<Transaction, TxnSection>
-          sections={sections}
-          keyExtractor={(item) => item.id}
-          stickySectionHeadersEnabled={false}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 140 }}
-          renderSectionHeader={({
-            section,
-          }: {
-            section: SectionListData<Transaction, TxnSection>;
-          }) => <SectionHeader theme={theme} title={section.title} />}
-          renderItem={(
-            info: SectionListRenderItemInfo<Transaction, TxnSection>,
-          ) => (
-            <TransactionRow theme={theme} item={info.item} onPress={openTxn} />
-          )}
-        />
-
-        <Fab theme={theme} bottom={24} />
-
-        <TransactionSummaryModal
-          theme={theme}
-          visible={selectedTxn !== null}
-          txn={selectedTxn}
-          onClose={closeTxn}
-          // TODO: optional later:
-          // onDelete={(t) => { ... }}
-        />
-      </View>
-    </SafeAreaView>
+      <TransactionSummaryModal
+        theme={theme}
+        visible={selectedTxn !== null}
+        txn={selectedTxn}
+        onClose={closeTxn}
+        // TODO: optional later:
+        // onDelete={(t) => { ... }}
+      />
+    </View>
   );
 }
 

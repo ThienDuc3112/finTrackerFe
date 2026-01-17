@@ -1,25 +1,35 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
 
 type Props = {
   theme: MaterialTheme;
   title: string;
-  onPressMenu?: () => void;
-  onPressSearch?: () => void;
+  onMenu: () => void;
+  onSearch: () => void;
 };
 
-export function TopAppBar({
+export function ExpenseTopBar({
   theme,
   title,
-  onPressMenu,
-  onPressSearch,
+  onMenu,
+  onSearch,
 }: Props): React.ReactElement {
   return (
-    <View style={[styles.root]}>
+    <View
+      style={[
+        styles.root,
+        {
+          paddingHorizontal: theme.spacing.lg,
+          paddingVertical: theme.spacing.md,
+          borderBottomColor: theme.colors.divider,
+          backgroundColor: theme.colors.background,
+        },
+      ]}
+    >
       <Pressable
-        onPress={onPressMenu}
+        onPress={onMenu}
         hitSlop={10}
         android_ripple={{ color: theme.colors.ripple, borderless: true }}
         style={styles.iconBtn}
@@ -32,21 +42,24 @@ export function TopAppBar({
       </Pressable>
 
       <Text
-        style={[styles.title, { color: theme.colors.onBackground }]}
+        style={[
+          styles.title,
+          { color: theme.colors.onBackground, fontFamily: theme.fonts.rounded },
+        ]}
         numberOfLines={1}
       >
         {title}
       </Text>
 
       <Pressable
-        onPress={onPressSearch}
+        onPress={onSearch}
         hitSlop={10}
         android_ripple={{ color: theme.colors.ripple, borderless: true }}
         style={styles.iconBtn}
       >
         <MaterialIcons
           name="search"
-          size={24}
+          size={26}
           color={theme.colors.onBackground}
         />
       </Pressable>
@@ -56,22 +69,21 @@ export function TopAppBar({
 
 const styles = StyleSheet.create({
   root: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 999,
   },
   title: {
+    flex: 1,
+    textAlign: "center",
     fontSize: 22,
-    fontWeight: "700",
     letterSpacing: 0.2,
   },
 });

@@ -5,14 +5,38 @@ import { HapticTab } from "@/components/haptic-tab";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/use-theme";
 import { Platform } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { TopAppBar } from "@/components/common/topAppBar";
 
 export default function TabLayout() {
   const theme = useTheme();
 
+  const renderHeader = React.useCallback(
+    (_props: any) => {
+      const title = "placeholder";
+
+      return (
+        <SafeAreaView
+          edges={["top"]}
+          style={{ backgroundColor: theme.colors.background }}
+        >
+          <TopAppBar
+            theme={theme}
+            title={title}
+            onPressMenu={() => {}}
+            onPressSearch={() => {}}
+            showDivider={false}
+          />
+        </SafeAreaView>
+      );
+    },
+    [theme],
+  );
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        header: renderHeader,
         tabBarButton: HapticTab,
 
         // icon/label colors
@@ -54,24 +78,6 @@ export default function TabLayout() {
         name="budgets"
         options={{
           title: "Budgets",
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="calendar-outline" size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="accounts"
-        options={{
-          title: "Accounts",
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="wallet-outline" size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="categories"
-        options={{
-          title: "Categories",
           tabBarIcon: ({ color }) => (
             <Ionicons name="calendar-outline" size={22} color={color} />
           ),

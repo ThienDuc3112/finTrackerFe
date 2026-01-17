@@ -2,6 +2,16 @@ import { Transaction } from "@/types/money";
 
 export const SAMPLE: Transaction[] = [
   {
+    id: "t2000",
+    amount: -400,
+    currency: "SGD",
+    category: "Shopping",
+    method: "PayNow",
+    occurredAt: new Date("2026-01-17T12:35:00+08:00"),
+    merchant: "",
+    note: "3d machine",
+  },
+  {
     id: "t2001",
     amount: -12.8,
     currency: "SGD",
@@ -93,7 +103,7 @@ export const SAMPLE: Transaction[] = [
   },
   {
     id: "t2010",
-    amount: -39.9,
+    amount: -19.9,
     currency: "SGD",
     category: "Shopping",
     method: "Card",
