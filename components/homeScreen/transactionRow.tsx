@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
-import type { Category, Transaction } from "@/types/money";
+import type { Transaction } from "@/types/money";
 import type { ComponentProps } from "react";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
@@ -10,15 +10,12 @@ type IoniconName = ComponentProps<typeof Ionicons>["name"];
 type Props = {
   theme: MaterialTheme;
   item: Transaction;
-  onPress?: (txn: Transaction) => void;
+  onPress?: (txn: Transaction) => void; // now: open modal
 };
 
 type CategoryMeta = { bg: string; iconName: IoniconName };
 
-const categoryMeta = (
-  theme: MaterialTheme,
-  category: Category,
-): CategoryMeta => {
+const categoryMeta = (theme: MaterialTheme, category: string): CategoryMeta => {
   switch (category) {
     case "Food":
       return { bg: theme.colors.error, iconName: "restaurant" };
@@ -33,11 +30,7 @@ const categoryMeta = (
   }
 };
 
-export function TransactionRow({
-  theme,
-  item,
-  onPress,
-}: Props): React.ReactElement {
+export function TransactionRow({ theme, item, onPress }: Props) {
   const meta = categoryMeta(theme, item.category);
 
   return (

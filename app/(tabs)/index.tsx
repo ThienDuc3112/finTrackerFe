@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Platform,
   SectionList,
@@ -19,6 +19,8 @@ import { SummaryCard } from "@/components/homeScreen/summaryCard";
 import { SectionHeader } from "@/components/homeScreen/sectionHeader";
 import { TransactionRow } from "@/components/homeScreen/transactionRow";
 import { Fab } from "@/components/homeScreen/fab";
+import { SAMPLE } from "@/sampleData/sample";
+import { TransactionSummaryModal } from "@/components/homeScreen/transactionSummaryModal";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -42,72 +44,16 @@ function isSameMonth(a: Date, monthAnchor: Date): boolean {
   );
 }
 
-const SAMPLE: Transaction[] = [
-  {
-    id: "t1",
-    date: new Date(2026, 0, 17),
-    category: "Food",
-    method: "Card",
-    amount: -9.3,
-  },
-  {
-    id: "t2",
-    date: new Date(2026, 0, 16),
-    category: "Drinks",
-    method: "Card",
-    amount: -1.0,
-  },
-  {
-    id: "t3",
-    date: new Date(2026, 0, 16),
-    category: "Drinks",
-    method: "Card",
-    amount: -5.0,
-  },
-  {
-    id: "t4",
-    date: new Date(2026, 0, 16),
-    category: "Food",
-    method: "Card",
-    amount: -9.3,
-  },
-  {
-    id: "t5",
-    date: new Date(2026, 0, 16),
-    category: "Games",
-    method: "Card",
-    amount: -10.0,
-  },
-  {
-    id: "t6",
-    date: new Date(2026, 0, 15),
-    category: "Transportation",
-    method: "Card",
-    amount: -2.98,
-  },
-  {
-    id: "t7",
-    date: new Date(2026, 0, 15),
-    category: "Drinks",
-    method: "Card",
-    amount: -1.8,
-  },
-  {
-    id: "t8",
-    date: new Date(2026, 0, 15),
-    category: "Food",
-    method: "Card",
-    amount: -6.5,
-  },
-];
-
 export default function RecordsScreen(): React.ReactElement {
   const theme = useTheme();
+  const [selectedTxn, setSelectedTxn] = useState<Transaction | null>(null);
+  const openTxn = useCallback((txn: Transaction) => setSelectedTxn(txn), []);
+  const closeTxn = useCallback(() => setSelectedTxn(null), []);
   const [month, setMonth] = useState<Date>(() => new Date(2026, 0, 1));
 
   const monthTxns = useMemo(() => {
-    return SAMPLE.filter((t) => isSameMonth(t.date, month)).sort(
-      (a, b) => b.date.getTime() - a.date.getTime(),
+    return SAMPLE.filter((t) => isSameMonth(t.occurredAt, month)).sort(
+      (a, b) => b.occurredAt.getTime() - a.occurredAt.getTime(),
     );
   }, [month]);
 
@@ -118,10 +64,15 @@ export default function RecordsScreen(): React.ReactElement {
     >();
 
     for (const t of monthTxns) {
-      const key = dateKey(t.date);
+      const key = dateKey(t.occurredAt);
       const existing = map.get(key);
       if (existing) existing.data.push(t);
-      else map.set(key, { date: t.date, title: dateTitle(t.date), data: [t] });
+      else
+        map.set(key, {
+          date: t.occurredAt,
+          title: dateTitle(t.occurredAt),
+          data: [t],
+        });
     }
 
     return Array.from(map.values())
@@ -208,11 +159,23 @@ export default function RecordsScreen(): React.ReactElement {
           }) => <SectionHeader theme={theme} title={section.title} />}
           renderItem={(
             info: SectionListRenderItemInfo<Transaction, TxnSection>,
-          ) => <TransactionRow theme={theme} item={info.item} />}
+          ) => (
+            <TransactionRow theme={theme} item={info.item} onPress={openTxn} />
+          )}
         />
 
         {/* If FAB overlaps your tab bar, increase bottom (e.g. 96) */}
         <Fab theme={theme} bottom={86} />
+
+        <TransactionSummaryModal
+          theme={theme}
+          visible={selectedTxn !== null}
+          txn={selectedTxn}
+          onClose={closeTxn}
+          // optional later:
+          // onEdit={(t) => { ... }}
+          // onDelete={(t) => { ... }}
+        />
       </View>
     </SafeAreaView>
   );
