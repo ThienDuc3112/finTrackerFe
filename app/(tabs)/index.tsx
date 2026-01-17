@@ -126,7 +126,7 @@ export default function RecordsScreen(): React.ReactElement {
         style={[styles.container, { backgroundColor: theme.colors.background }]}
       >
         <View style={{ paddingTop: Platform.OS === "android" ? 8 : 0 }}>
-          <TopAppBar theme={theme} title="MyMoney" />
+          <TopAppBar theme={theme} title="Placeholder" />
         </View>
 
         <MonthNav
@@ -164,16 +164,14 @@ export default function RecordsScreen(): React.ReactElement {
           )}
         />
 
-        {/* If FAB overlaps your tab bar, increase bottom (e.g. 96) */}
-        <Fab theme={theme} bottom={86} />
+        <Fab theme={theme} bottom={24} />
 
         <TransactionSummaryModal
           theme={theme}
           visible={selectedTxn !== null}
           txn={selectedTxn}
           onClose={closeTxn}
-          // optional later:
-          // onEdit={(t) => { ... }}
+          // TODO: optional later:
           // onDelete={(t) => { ... }}
         />
       </View>

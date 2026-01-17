@@ -22,4 +22,15 @@ export type Transaction = {
   occurredAt: Date;
   merchant?: string;
   note?: string;
+  aiComment?: string;
+};
+
+type TxnInput = {
+  amount: number;
+  currency: string;
+  category?: string | null | undefined;
+  method?: string | null | undefined;
+  occurredAt: Date;
+  merchant?: string | null | undefined;
+  note: string;
 };
