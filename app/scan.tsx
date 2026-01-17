@@ -32,6 +32,8 @@ import {
   postReceiptImageStub,
 } from "@/components/txn/scan/api";
 import { ReceiptSourceSheet } from "@/components/txn/scan/sheets/source";
+import { MetadataEditorSheet } from "@/components/txn/scan/sheets/metadataEditor";
+import { ItemEditorSheet } from "@/components/txn/scan/sheets/itemEditor";
 import { CategoryPickerSheet } from "@/components/txn/scan/sheets/categoryPicker";
 import { useAtomValue } from "jotai";
 import { CategoriesAtom } from "@/contexts/init";
@@ -50,6 +52,13 @@ export default function ScanReceiptScreen() {
   const [loading, setLoading] = React.useState(false);
 
   const [currency] = React.useState("SGD");
+  const [metaEditorOpen, setMetaEditorOpen] = React.useState(false);
+
+  const [itemEditor, setItemEditor] = React.useState<{
+    open: boolean;
+    lineId: string | null;
+    mode: "edit" | "add";
+  }>({ open: false, lineId: null, mode: "edit" });
 
   const [groups, setGroups] = React.useState<GroupState[]>([
     { id: "g1", category: null },
@@ -315,6 +324,54 @@ export default function ScanReceiptScreen() {
     console.log("Built transactions:", built);
   }, [apiData, currency, groups, groupTotal, lines]);
 
+  const openEditItem = React.useCallback((lineId: string) => {
+    setItemEditor({ open: true, lineId, mode: "edit" });
+  }, []);
+
+  const openAddItem = React.useCallback(() => {
+    setItemEditor({ open: true, lineId: null, mode: "add" });
+  }, []);
+
+  const removeItem = React.useCallback((lineId: string) => {
+    setLines((prev) => prev.filter((l) => l.id !== lineId));
+    setItemEditor({ open: false, lineId: null, mode: "edit" });
+  }, []);
+
+  const saveEditItem = React.useCallback(
+    (lineId: string, next: { name: string; price: number }) => {
+      setLines((prev) =>
+        prev.map((l) =>
+          l.id === lineId
+            ? { ...l, name: next.name, unitPrice: next.price }
+            : l,
+        ),
+      );
+      setItemEditor({ open: false, lineId: null, mode: "edit" });
+    },
+    [],
+  );
+
+  const addItem = React.useCallback(
+    (next: { name: string; price: number; quantity?: number }) => {
+      const qty = Math.max(1, next.quantity ?? 1);
+      const groupId = groups[0]?.id ?? "g1";
+
+      const newLine: LineState = {
+        id: uid("line"),
+        name: next.name,
+        unitPrice: next.price,
+        maxQty: qty,
+        qty,
+        selected: true,
+        groupId,
+      };
+
+      setLines((prev) => [...prev, newLine]);
+      setItemEditor({ open: false, lineId: null, mode: "edit" });
+    },
+    [groups],
+  );
+
   const categories = useAtomValue(CategoriesAtom);
 
   return (
@@ -367,6 +424,57 @@ export default function ScanReceiptScreen() {
           moveLineTo(newId);
         }}
         onClose={() => setMoveSheet({ open: false, lineId: null })}
+      />
+
+      <MetadataEditorSheet
+        theme={theme}
+        visible={metaEditorOpen && !!apiData}
+        initialMerchant={apiData?.merchant ?? ""}
+        initialPaymentMethod={apiData?.payment_method ?? "CARD"}
+        initialTotal={apiData?.total ?? 0}
+        onClose={() => setMetaEditorOpen(false)}
+        onSave={(next) => {
+          setApiData((prev) => (prev ? { ...prev, ...next } : prev));
+          setMetaEditorOpen(false);
+        }}
+      />
+
+      <ItemEditorSheet
+        theme={theme}
+        visible={itemEditor.open}
+        title={itemEditor.mode === "add" ? "Add item" : "Edit item"}
+        initialName={
+          itemEditor.mode === "edit"
+            ? (lines.find((l) => l.id === itemEditor.lineId)?.name ?? "")
+            : ""
+        }
+        initialPrice={
+          itemEditor.mode === "edit"
+            ? (lines.find((l) => l.id === itemEditor.lineId)?.unitPrice ?? 0)
+            : 0
+        }
+        showQuantity={itemEditor.mode === "add"}
+        initialQuantity={1}
+        onClose={() =>
+          setItemEditor({ open: false, lineId: null, mode: "edit" })
+        }
+        onSave={(next) => {
+          if (itemEditor.mode === "add") {
+            addItem(next);
+            return;
+          }
+          if (itemEditor.lineId) {
+            saveEditItem(itemEditor.lineId, {
+              name: next.name,
+              price: next.price,
+            });
+          }
+        }}
+        onRemove={
+          itemEditor.mode === "edit" && itemEditor.lineId
+            ? () => removeItem(itemEditor.lineId)
+            : undefined
+        }
       />
 
       <ScrollView contentContainerStyle={s.content}>
@@ -434,12 +542,34 @@ export default function ScanReceiptScreen() {
           )}
         </View>
 
-        {/* 2) API status */}
-        <View style={[s.card, cardStyle(theme)]}>
+        {/* Merchant */}
+        <View style={s.rowBetween}>
           <Text style={[s.cardTitle, { color: theme.colors.onSurface }]}>
-            2) Parse (stub API)
+            Metadata
           </Text>
 
+          <Pressable
+            onPress={() => setMetaEditorOpen(true)}
+            disabled={!apiData}
+            android_ripple={{ color: theme.colors.ripple }}
+            style={[
+              s.btnSm,
+              btnStyle(theme, "ghost"),
+              !apiData && { opacity: 0.5 },
+            ]}
+          >
+            <MaterialIcons
+              name="edit"
+              size={16}
+              color={theme.colors.onSurface}
+            />
+            <Text style={[btnTextStyle(theme, "ghost"), { fontSize: 12 }]}>
+              Edit
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={[s.card, cardStyle(theme)]}>
           {loading ? (
             <View style={s.loadingRow}>
               <ActivityIndicator />
@@ -466,12 +596,12 @@ export default function ScanReceiptScreen() {
           )}
         </View>
 
-        {/* 6) Groups */}
+        {/* Groups */}
         {apiData ? (
           <View style={[s.card, cardStyle(theme)]}>
             <View style={s.rowBetween}>
               <Text style={[s.cardTitle, { color: theme.colors.onSurface }]}>
-                6) Groups (transactions)
+                Groups (transactions)
               </Text>
 
               <Pressable
@@ -523,7 +653,7 @@ export default function ScanReceiptScreen() {
         {apiData ? (
           <View style={[s.card, cardStyle(theme)]}>
             <Text style={[s.cardTitle, { color: theme.colors.onSurface }]}>
-              4) Items (select + quantity + grouping)
+              Items (select + quantity + grouping)
             </Text>
 
             <View style={{ marginTop: theme.spacing.sm, gap: 8 }}>
@@ -541,18 +671,48 @@ export default function ScanReceiptScreen() {
                     onDec={() => decQty(l.id)}
                     onInc={() => incQty(l.id)}
                     onOpenMove={() => openMoveForLine(l.id)}
+                    onEdit={() => openEditItem(l.id)}
                   />
                 );
               })}
             </View>
+
+            <Pressable
+              onPress={openAddItem}
+              android_ripple={{ color: theme.colors.ripple }}
+              style={[
+                {
+                  marginTop: theme.spacing.sm,
+                  minHeight: 44,
+                  borderRadius: theme.radius.md,
+                  borderWidth: 1,
+                  borderColor: theme.colors.divider,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexDirection: "row",
+                  gap: 8,
+                },
+              ]}
+            >
+              <MaterialIcons
+                name="add"
+                size={18}
+                color={theme.colors.primary}
+              />
+              <Text
+                style={{ color: theme.colors.onSurface, fontWeight: "900" }}
+              >
+                Add item
+              </Text>
+            </Pressable>
           </View>
         ) : null}
 
-        {/* 7) Confirm */}
+        {/* Confirm */}
         {apiData ? (
           <View style={[s.card, cardStyle(theme)]}>
             <Text style={[s.cardTitle, { color: theme.colors.onSurface }]}>
-              7) Confirm
+              Confirm
             </Text>
 
             <Pressable
@@ -576,7 +736,7 @@ export default function ScanReceiptScreen() {
                 marginTop: theme.spacing.sm,
               }}
             >
-              This will Alert() the TxnInput[] (stub).
+              This will Alert() the TxnInput[] (stub). TODO: Edit this
             </Text>
           </View>
         ) : null}

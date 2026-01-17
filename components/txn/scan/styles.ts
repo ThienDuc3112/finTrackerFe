@@ -220,4 +220,13 @@ export const makeStyles = (theme: MaterialTheme) =>
       alignItems: "center",
       justifyContent: "center",
     },
+    iconBtnSm: {
+      width: 28,
+      height: 28,
+      borderRadius: theme.radius.pill,
+      borderWidth: 1,
+      borderColor: theme.colors.divider,
+      alignItems: "center",
+      justifyContent: "center",
+    },
   });

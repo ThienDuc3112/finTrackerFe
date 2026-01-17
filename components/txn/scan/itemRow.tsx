@@ -15,6 +15,7 @@ type Props = {
   onDec: () => void;
   onInc: () => void;
   onOpenMove: () => void;
+  onEdit: () => void;
 };
 
 export function ItemRow({
@@ -26,6 +27,7 @@ export function ItemRow({
   onDec,
   onInc,
   onOpenMove,
+  onEdit,
 }: Props) {
   const s = makeStyles(theme);
   const checked = line.selected && line.qty > 0;
@@ -90,39 +92,59 @@ export function ItemRow({
         </View>
       </View>
 
-      <View style={s.qtyWrap}>
-        <Pressable
-          onPress={onDec}
-          disabled={!checked}
-          android_ripple={{ color: theme.colors.ripple, borderless: true }}
-          style={s.qtyBtn}
-        >
-          <MaterialIcons
-            name="remove"
-            size={18}
-            color={checked ? theme.colors.onSurface : theme.colors.outline}
-          />
-        </Pressable>
+      <Pressable
+        onPress={onEdit}
+        android_ripple={{ color: theme.colors.ripple, borderless: true }}
+        style={[s.iconBtnSm, { marginBottom: 6 }]}
+      >
+        <MaterialIcons name="edit" size={16} color={theme.colors.onSurface} />
+      </Pressable>
 
-        <Text
+      <View style={s.qtyWrap}>
+        <View
           style={{
-            color: theme.colors.onSurface,
-            fontWeight: "900",
-            width: 22,
-            textAlign: "center",
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {line.qty}
-        </Text>
+          <Pressable
+            onPress={onDec}
+            disabled={!checked}
+            android_ripple={{ color: theme.colors.ripple, borderless: true }}
+            style={s.qtyBtn}
+          >
+            <MaterialIcons
+              name="remove"
+              size={18}
+              color={checked ? theme.colors.onSurface : theme.colors.outline}
+            />
+          </Pressable>
 
-        <Pressable
-          onPress={onInc}
-          android_ripple={{ color: theme.colors.ripple, borderless: true }}
-          style={s.qtyBtn}
-        >
-          <MaterialIcons name="add" size={18} color={theme.colors.onSurface} />
-        </Pressable>
+          <Text
+            style={{
+              color: theme.colors.onSurface,
+              fontWeight: "900",
+              width: 22,
+              textAlign: "center",
+            }}
+          >
+            {line.qty}
+          </Text>
 
+          <Pressable
+            onPress={onInc}
+            android_ripple={{ color: theme.colors.ripple, borderless: true }}
+            style={s.qtyBtn}
+          >
+            <MaterialIcons
+              name="add"
+              size={18}
+              color={theme.colors.onSurface}
+            />
+          </Pressable>
+        </View>
         <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
           {formatMoney(currency, line.unitPrice * line.qty)}
         </Text>
