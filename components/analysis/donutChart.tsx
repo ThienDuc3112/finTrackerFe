@@ -4,8 +4,8 @@ import Svg, { Path } from "react-native-svg";
 import type { MaterialTheme } from "@/constants/theme";
 
 type Segment = {
-  key: string; // category name
-  value: number; // positive
+  key: string;
+  value: number;
   color: string;
   label: string;
 };
@@ -38,6 +38,34 @@ function arcPath(
   return `M ${s.x} ${s.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${e.x} ${e.y}`;
 }
 
+/**
+ * Filled donut-sector path (outer arc + inner arc) for reliable touch hitbox on Android.
+ */
+function sectorPath(
+  cx: number,
+  cy: number,
+  rOuter: number,
+  rInner: number,
+  start: number,
+  end: number,
+) {
+  const largeArcFlag = end - start > Math.PI ? 1 : 0;
+
+  const os = polarToCartesian(cx, cy, rOuter, start);
+  const oe = polarToCartesian(cx, cy, rOuter, end);
+  const ie = polarToCartesian(cx, cy, rInner, end);
+  const is = polarToCartesian(cx, cy, rInner, start);
+
+  return [
+    `M ${os.x} ${os.y}`,
+    `A ${rOuter} ${rOuter} 0 ${largeArcFlag} 1 ${oe.x} ${oe.y}`,
+    `L ${ie.x} ${ie.y}`,
+    // reverse sweep on inner arc
+    `A ${rInner} ${rInner} 0 ${largeArcFlag} 0 ${is.x} ${is.y}`,
+    "Z",
+  ].join(" ");
+}
+
 export function DonutChart({
   theme,
   size,
@@ -54,7 +82,7 @@ export function DonutChart({
 
   // start at top
   let cursor = -Math.PI / 2;
-  const gap = 0.03; // radians
+  const gap = 0.03;
 
   const inactiveOpacity = selectedKey ? 0.25 : 1;
 
@@ -75,22 +103,41 @@ export function DonutChart({
           const r = isSelected ? baseR + 2 : baseR;
           const sw = isSelected ? strokeWidth + 4 : strokeWidth;
 
+          // define inner/outer radii to match the visible stroke thickness
+          const rOuter = r + sw / 2;
+          const rInner = Math.max(1, r - sw / 2);
+
+          const handlePress = onSelect ? () => onSelect(s.key) : undefined;
+
           return (
-            <Path
-              key={s.key}
-              d={arcPath(cx, cy, r, start, end)}
-              stroke={s.color}
-              strokeWidth={sw}
-              strokeLinecap="butt"
-              fill="none"
-              opacity={isSelected ? 1 : inactiveOpacity}
-              onPress={onSelect ? () => onSelect(s.key) : undefined}
-            />
+            <React.Fragment key={s.key}>
+              {/* ✅ Android-friendly hit area */}
+              <Path
+                d={sectorPath(cx, cy, rOuter, rInner, start, end)}
+                fill={theme.colors.background}
+                fillOpacity={0.01} // effectively invisible but still hittable on Android
+                onPressIn={handlePress} // onPressIn tends to be more reliable in ScrollView
+              />
+
+              {/* visible stroke */}
+              <Path
+                d={arcPath(cx, cy, r, start, end)}
+                stroke={s.color}
+                strokeWidth={sw}
+                strokeLinecap="butt"
+                fill="none"
+                opacity={isSelected ? 1 : inactiveOpacity}
+                // optional: keep this too; harmless
+                onPressIn={handlePress}
+              />
+            </React.Fragment>
           );
         })}
       </Svg>
 
-      <View style={styles.center}>
+      {/* keep label, and make sure it doesn't eat touches */}
+
+      <View pointerEvents="none" style={styles.center}>
         <Text style={[styles.centerText, { color: theme.colors.onBackground }]}>
           {centerLabel}
         </Text>

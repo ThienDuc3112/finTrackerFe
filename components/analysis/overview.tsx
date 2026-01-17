@@ -1,5 +1,11 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { useAtom } from "jotai";
 import type { MaterialTheme } from "@/constants/theme";
 
@@ -39,6 +45,9 @@ export function ExpenseOverview({
   byCategory,
   formatMoney,
 }: Props): React.ReactElement {
+  const { width } = useWindowDimensions();
+  const isWide = width >= 600; // foldable unfolded usually > 600, tweak if needed
+
   const [selected, setSelected] = useAtom(selectedCategoryAtom);
 
   const onSelect = React.useCallback(
@@ -56,6 +65,13 @@ export function ExpenseOverview({
       })),
     [byCategory, theme],
   );
+
+  const [chartW, setChartW] = React.useState(0);
+
+  // keep donut nicely sized inside its column
+  const donutSize = Math.max(140, Math.min(chartW, 240)); // tweak bounds to taste
+
+  const legendMax = 200; // <-- “text decides width” up to this max
 
   return (
     <View>
@@ -78,17 +94,36 @@ export function ExpenseOverview({
       <View style={{ height: theme.spacing.md }} />
 
       <View style={styles.chartRow}>
-        <DonutChart
-          theme={theme}
-          size={200}
-          strokeWidth={26} // <-- slightly thicker than before
-          centerLabel="Expenses"
-          segments={segments}
-          selectedKey={selected}
-          onSelect={onSelect}
-        />
+        <View
+          style={[
+            styles.chartCol,
+            isWide && {
+              alignItems: "flex-end",
+              paddingRight: theme.spacing.sm,
+            },
+          ]}
+          onLayout={(e) => setChartW(e.nativeEvent.layout.width)}
+        >
+          {chartW > 0 ? (
+            <DonutChart
+              theme={theme}
+              size={donutSize}
+              strokeWidth={26}
+              centerLabel="Expenses"
+              segments={segments}
+              selectedKey={selected}
+              onSelect={onSelect}
+            />
+          ) : null}
+        </View>
 
-        <View style={{ flex: 1, paddingLeft: theme.spacing.lg, gap: 10 }}>
+        <View
+          style={{
+            flexShrink: 0,
+            paddingLeft: isWide ? theme.spacing.md : theme.spacing.lg, // ✅ tighter on wide
+            maxWidth: legendMax,
+          }}
+        >
           {segments.map((s) => {
             const isSelected = selected === s.key;
             const dim = selected && !isSelected;
@@ -161,7 +196,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sectionTitle: { fontSize: 18, fontWeight: "900", letterSpacing: 0.8 },
-  chartRow: { flexDirection: "row", alignItems: "center" },
+  chartRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   legendRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -171,4 +210,9 @@ const styles = StyleSheet.create({
   },
   legendSwatch: { width: 14, height: 14 },
   legendText: { fontSize: 14, fontWeight: "700" },
+  chartCol: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

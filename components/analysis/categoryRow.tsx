@@ -63,7 +63,7 @@ export function CategoryRow({
       style={[
         styles.root,
         {
-          paddingVertical: theme.spacing.md,
+          paddingVertical: theme.spacing.sm,
           borderRadius: theme.radius.lg,
           backgroundColor: selected ? theme.colors.surface : "transparent",
           borderWidth: selected ? 2 : 0,

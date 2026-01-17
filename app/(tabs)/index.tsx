@@ -1,26 +1,24 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  Platform,
   SectionList,
   StyleSheet,
   View,
   type SectionListData,
   type SectionListRenderItemInfo,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/use-theme";
 import type { MoneySummary, Transaction, TxnSection } from "@/types/money";
 import { addMonths, formatMoneySGD, monthTitle } from "@/utils/money";
 
-import { TopAppBar } from "@/components/homeScreen/topAppBar";
-import { MonthNav } from "@/components/homeScreen/monthNav";
+import { MonthNav } from "@/components/common/monthNav";
 import { SummaryCard } from "@/components/homeScreen/summaryCard";
 import { SectionHeader } from "@/components/homeScreen/sectionHeader";
 import { TransactionRow } from "@/components/homeScreen/transactionRow";
 import { Fab } from "@/components/homeScreen/fab";
 import { SAMPLE } from "@/sampleData/sample";
 import { TransactionSummaryModal } from "@/components/homeScreen/transactionSummaryModal";
+import { EmptyState } from "@/components/analysis/emptyState";
 
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
@@ -138,6 +136,7 @@ export default function RecordsScreen(): React.ReactElement {
         }}
       />
 
+      {monthTxns.length === 0 && <EmptyState theme={theme} />}
       <SectionList<Transaction, TxnSection>
         sections={sections}
         keyExtractor={(item) => item.id}

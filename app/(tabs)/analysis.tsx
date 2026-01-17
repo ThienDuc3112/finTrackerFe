@@ -1,60 +1,54 @@
 import React from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/hooks/use-theme";
 import type { Transaction } from "@/types/money";
 
-// put your SAMPLE in e.g. `data/sample.ts` and import it:
+import { SAMPLE } from "@/sampleData/sample"; // <-- move your SAMPLE into data/sample.ts
+import { MonthNav } from "@/components/common/monthNav";
+import { ExpenseOverview } from "@/components/analysis/overview";
+
+// If you already have these in utils/money, use them instead
+import { addMonths, monthTitle, formatMoneySGD } from "@/utils/money";
+import { EmptyState } from "@/components/analysis/emptyState";
+
+// OPTIONAL: if you use jotai for selected category highlight
 import { useSetAtom } from "jotai";
 import { selectedCategoryAtom } from "@/components/analysis/state";
-import { SAMPLE } from "@/sampleData/sample";
-import { ExpenseOverview } from "@/components/analysis/overview";
+
+type CategoryAgg = {
+  category: string;
+  amountAbs: number; // positive absolute expense
+  amountSigned: number; // negative for display if you prefer
+  pct: number; // 0..1
+};
 
 function startOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), 1);
 }
 
-function inSameMonth(date: Date, month: Date): boolean {
-  return (
-    date.getFullYear() === month.getFullYear() &&
-    date.getMonth() === month.getMonth()
-  );
+function isSameMonth(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-function monthTitle(d: Date): string {
-  return d.toLocaleDateString("en-SG", { month: "long", year: "numeric" });
+function getLatestMonth(txns: Transaction[]): Date {
+  if (txns.length === 0) return startOfMonth(new Date());
+  let max = txns[0].occurredAt;
+  for (const t of txns) if (t.occurredAt > max) max = t.occurredAt;
+  return startOfMonth(max);
 }
 
-function addMonths(d: Date, delta: number): Date {
-  return new Date(d.getFullYear(), d.getMonth() + delta, 1);
-}
-
-function formatMoney(currency: string, amount: number): string {
-  const sign = amount < 0 ? "-" : "";
-  const abs = Math.abs(amount);
-  if (currency === "SGD") return `${sign}S$${abs.toFixed(2)}`;
-  return `${sign}${abs.toFixed(2)} ${currency}`;
-}
-
-type CategoryAgg = {
-  category: string;
-  amountAbs: number;
-  amountSigned: number;
-  pct: number;
-};
-
-function buildExpenseAgg(
+function buildExpenseByCategory(
   txns: Transaction[],
   month: Date,
 ): {
-  currency: string;
+  byCategory: CategoryAgg[];
   expenseAbs: number;
   income: number;
   total: number;
-  byCategory: CategoryAgg[];
 } {
-  const monthTxns = txns.filter((t) => inSameMonth(t.occurredAt, month));
-  const currency = monthTxns[0]?.currency ?? "SGD";
+  const monthTxns = txns.filter((t) => isSameMonth(t.occurredAt, month));
 
   let expenseAbs = 0;
   let income = 0;
@@ -64,6 +58,7 @@ function buildExpenseAgg(
 
   for (const t of monthTxns) {
     total += t.amount;
+
     if (t.amount < 0) {
       const abs = -t.amount;
       expenseAbs += abs;
@@ -73,7 +68,7 @@ function buildExpenseAgg(
     }
   }
 
-  const byCategory = Array.from(map.entries())
+  const byCategory: CategoryAgg[] = Array.from(map.entries())
     .map(([category, amountAbs]) => ({
       category,
       amountAbs,
@@ -82,55 +77,71 @@ function buildExpenseAgg(
     }))
     .sort((a, b) => b.amountAbs - a.amountAbs);
 
-  return { currency, expenseAbs, income, total, byCategory };
+  return { byCategory, expenseAbs, income, total };
 }
 
 export default function AnalysisScreen(): React.ReactElement {
   const theme = useTheme();
-  const [month, setMonth] = React.useState<Date>(() =>
-    startOfMonth(new Date("2026-01-01T00:00:00+08:00")),
-  );
 
-  // optional: clear selection when changing month
+  // Default to the latest month in SAMPLE (Jan 2026 in your data)
+  const [month, setMonth] = React.useState<Date>(() => getLatestMonth(SAMPLE));
+
+  // OPTIONAL (jotai): clear selected category when changing month
   const clearSelected = useSetAtom(selectedCategoryAtom);
 
-  const { currency, byCategory } = React.useMemo(
-    () => buildExpenseAgg(SAMPLE, month),
+  const { byCategory /*, expenseAbs, income, total */ } = React.useMemo(
+    () => buildExpenseByCategory(SAMPLE, month),
     [month],
   );
 
-  React.useEffect(() => {
-    clearSelected(null);
-  }, [month, clearSelected]);
-
   return (
-    <ScrollView
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingHorizontal: theme.spacing.lg,
-          paddingBottom: theme.spacing.xl,
-          backgroundColor: theme.colors.background,
-        },
-      ]}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* keep your own top bar + month nav + summary row here */}
-      {/* e.g. Month: {monthTitle(month)} with prev/next */}
-
-      <View style={{ height: theme.spacing.md }} />
-
-      <ExpenseOverview
+    <View style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+      <MonthNav
         theme={theme}
-        currency={currency}
-        byCategory={byCategory}
-        formatMoney={formatMoney}
+        label={monthTitle(month)}
+        onPrev={() => {
+          setMonth((m) => addMonths(m, -1));
+          clearSelected(null);
+        }}
+        onNext={() => {
+          setMonth((m) => addMonths(m, +1));
+          clearSelected(null);
+        }}
+        onFilter={() => {
+          // later: open a filter modal
+        }}
       />
-    </ScrollView>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: theme.spacing.xl },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* If you already have a summary component from home, reuse it here */}
+        {/* <Summary theme={theme} ... /> */}
+
+        <View style={{ height: theme.spacing.lg }} />
+
+        {byCategory.length == 0 ? (
+          <EmptyState theme={theme} />
+        ) : (
+          <ExpenseOverview
+            theme={theme}
+            currency="SGD"
+            byCategory={byCategory}
+            formatMoney={(_currency, amount) => formatMoneySGD(amount)}
+          />
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  content: { paddingTop: 8 },
+  content: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+  },
 });
