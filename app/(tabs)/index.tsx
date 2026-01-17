@@ -1,98 +1,224 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from "react";
+import {
+  Platform,
+  SectionList,
+  StyleSheet,
+  View,
+  type SectionListData,
+  type SectionListRenderItemInfo,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { useTheme } from "@/hooks/use-theme";
+import type { MoneySummary, Transaction, TxnSection } from "@/types/money";
+import { addMonths, formatMoneySGD, monthTitle } from "@/utils/money";
 
-export default function HomeScreen() {
+import { TopAppBar } from "@/components/homeScreen/topAppBar";
+import { MonthNav } from "@/components/homeScreen/monthNav";
+import { SummaryCard } from "@/components/homeScreen/summaryCard";
+import { SectionHeader } from "@/components/homeScreen/sectionHeader";
+import { TransactionRow } from "@/components/homeScreen/transactionRow";
+import { Fab } from "@/components/homeScreen/fab";
+
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+
+function dateKey(d: Date): string {
+  // Local date key (avoids UTC shifting from toISOString)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function dateTitle(d: Date): string {
+  const mon = d.toLocaleString("en-US", { month: "short" });
+  const weekday = d.toLocaleString("en-US", { weekday: "long" });
+  return `${mon} ${d.getDate()}, ${weekday}`;
+}
+
+function isSameMonth(a: Date, monthAnchor: Date): boolean {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    a.getFullYear() === monthAnchor.getFullYear() &&
+    a.getMonth() === monthAnchor.getMonth()
+  );
+}
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+const SAMPLE: Transaction[] = [
+  {
+    id: "t1",
+    date: new Date(2026, 0, 17),
+    category: "Food",
+    method: "Card",
+    amount: -9.3,
+  },
+  {
+    id: "t2",
+    date: new Date(2026, 0, 16),
+    category: "Drinks",
+    method: "Card",
+    amount: -1.0,
+  },
+  {
+    id: "t3",
+    date: new Date(2026, 0, 16),
+    category: "Drinks",
+    method: "Card",
+    amount: -5.0,
+  },
+  {
+    id: "t4",
+    date: new Date(2026, 0, 16),
+    category: "Food",
+    method: "Card",
+    amount: -9.3,
+  },
+  {
+    id: "t5",
+    date: new Date(2026, 0, 16),
+    category: "Games",
+    method: "Card",
+    amount: -10.0,
+  },
+  {
+    id: "t6",
+    date: new Date(2026, 0, 15),
+    category: "Transportation",
+    method: "Card",
+    amount: -2.98,
+  },
+  {
+    id: "t7",
+    date: new Date(2026, 0, 15),
+    category: "Drinks",
+    method: "Card",
+    amount: -1.8,
+  },
+  {
+    id: "t8",
+    date: new Date(2026, 0, 15),
+    category: "Food",
+    method: "Card",
+    amount: -6.5,
+  },
+];
+
+export default function RecordsScreen(): React.ReactElement {
+  const theme = useTheme();
+  const [month, setMonth] = useState<Date>(() => new Date(2026, 0, 1));
+
+  const monthTxns = useMemo(() => {
+    return SAMPLE.filter((t) => isSameMonth(t.date, month)).sort(
+      (a, b) => b.date.getTime() - a.date.getTime(),
+    );
+  }, [month]);
+
+  const sections = useMemo<TxnSection[]>(() => {
+    const map = new Map<
+      string,
+      { date: Date; title: string; data: Transaction[] }
+    >();
+
+    for (const t of monthTxns) {
+      const key = dateKey(t.date);
+      const existing = map.get(key);
+      if (existing) existing.data.push(t);
+      else map.set(key, { date: t.date, title: dateTitle(t.date), data: [t] });
+    }
+
+    return Array.from(map.values())
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .map(({ title, data }) => ({ title, data }));
+  }, [monthTxns]);
+
+  const summary = useMemo<MoneySummary>(() => {
+    const expense = monthTxns
+      .filter((t) => t.amount < 0)
+      .reduce((s, t) => s + Math.abs(t.amount), 0);
+
+    const income = monthTxns
+      .filter((t) => t.amount > 0)
+      .reduce((s, t) => s + t.amount, 0);
+
+    const total = income - expense;
+    return { expense, income, total };
+  }, [monthTxns]);
+
+  const summaryItems = useMemo(() => {
+    const totalText =
+      (summary.total < 0 ? "-" : "") + formatMoneySGD(Math.abs(summary.total));
+
+    return [
+      {
+        label: "EXPENSE",
+        value: formatMoneySGD(summary.expense),
+        valueColor: theme.colors.error,
+      },
+      {
+        label: "INCOME",
+        value: formatMoneySGD(summary.income),
+        valueColor: theme.colors.success,
+      },
+      {
+        label: "TOTAL",
+        value: totalText,
+        valueColor:
+          summary.total < 0 ? theme.colors.error : theme.colors.success,
+      },
+    ] as const;
+  }, [summary, theme.colors.error, theme.colors.success]);
+
+  return (
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: theme.colors.background }]}
+      edges={["top"]}
+    >
+      <View
+        style={[styles.container, { backgroundColor: theme.colors.background }]}
+      >
+        <View style={{ paddingTop: Platform.OS === "android" ? 8 : 0 }}>
+          <TopAppBar theme={theme} title="MyMoney" />
+        </View>
+
+        <MonthNav
+          theme={theme}
+          label={monthTitle(month)}
+          onPrev={() => setMonth((m) => addMonths(m, -1))}
+          onNext={() => setMonth((m) => addMonths(m, +1))}
+        />
+
+        <SummaryCard theme={theme} items={summaryItems} />
+
+        <View
+          style={{
+            height: 1,
+            backgroundColor: theme.colors.divider,
+            marginTop: 12,
+          }}
+        />
+
+        <SectionList<Transaction, TxnSection>
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          stickySectionHeadersEnabled={false}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 140 }}
+          renderSectionHeader={({
+            section,
+          }: {
+            section: SectionListData<Transaction, TxnSection>;
+          }) => <SectionHeader theme={theme} title={section.title} />}
+          renderItem={(
+            info: SectionListRenderItemInfo<Transaction, TxnSection>,
+          ) => <TransactionRow theme={theme} item={info.item} />}
+        />
+
+        {/* If FAB overlaps your tab bar, increase bottom (e.g. 96) */}
+        <Fab theme={theme} bottom={86} />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  safe: { flex: 1 },
+  container: { flex: 1 },
 });
