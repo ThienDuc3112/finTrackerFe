@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -35,11 +35,12 @@ import { ReceiptSourceSheet } from "@/components/txn/scan/sheets/source";
 import { MetadataEditorSheet } from "@/components/txn/scan/sheets/metadataEditor";
 import { ItemEditorSheet } from "@/components/txn/scan/sheets/itemEditor";
 import { CategoryPickerSheet } from "@/components/txn/scan/sheets/categoryPicker";
-import { useAtomValue } from "jotai";
-import { CategoriesAtom } from "@/contexts/init";
+import { useAtomValue, useSetAtom } from "jotai";
+import { CategoriesAtom, UpsertTransactionAtom } from "@/contexts/init";
 import { MoveToGroupSheet } from "@/components/txn/scan/sheets/moveToGroup";
 import { GroupRow } from "@/components/txn/scan/groupRow";
 import { ItemRow } from "@/components/txn/scan/itemRow";
+import uuid from "react-native-uuid";
 
 export default function ScanReceiptScreen() {
   const theme = useTheme();
@@ -80,6 +81,8 @@ export default function ScanReceiptScreen() {
     open: false,
     lineId: null,
   });
+
+  const upsertTxn = useSetAtom(UpsertTransactionAtom);
 
   const groupTotal = React.useCallback(
     (groupId: string) =>
@@ -306,7 +309,7 @@ export default function ScanReceiptScreen() {
         .concat(pickedLines.length > 8 ? "…" : "");
 
       built.push({
-        amount: -total,
+        amount: total,
         currency,
         category: g.category,
         method: normalizePaymentMethod(apiData.payment_method),
@@ -321,8 +324,24 @@ export default function ScanReceiptScreen() {
       return;
     }
 
-    Alert.alert("Transactions (stub)", JSON.stringify(built, null, 2));
+    // Alert.alert("Transactions (stub)", JSON.stringify(built, null, 2));
+    built.forEach(async (payload) => {
+      await upsertTxn({
+        amount: -payload.amount,
+        category: payload.category ?? ("other" as any),
+        occurredAt: payload.occurredAt,
+        note: payload.note,
+        merchant: payload.merchant ?? "",
+        currency: payload.currency,
+        id: uuid.v4(),
+        method: payload.method ?? "card",
+        aiComment: "",
+      });
+    });
+
     console.log("Built transactions:", built);
+    setCategoryPicker({ open: false, groupId: null });
+    router.back();
   }, [apiData, currency, groups, groupTotal, lines]);
 
   const openEditItem = React.useCallback((lineId: string) => {
@@ -725,15 +744,6 @@ export default function ScanReceiptScreen() {
                 Confirm & build transactions
               </Text>
             </Pressable>
-
-            <Text
-              style={{
-                color: theme.colors.onSurfaceVariant,
-                marginTop: theme.spacing.sm,
-              }}
-            >
-              This will Alert() the TxnInput[] (stub). TODO: Edit this
-            </Text>
           </View>
         ) : null}
 

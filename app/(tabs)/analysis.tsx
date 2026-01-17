@@ -84,9 +84,7 @@ export default function AnalysisScreen(): React.ReactElement {
 
   // Default to the latest month in SAMPLE (Jan 2026 in your data)
   const transactions = useAtomValue(TransactionsAtom);
-  const [month, setMonth] = React.useState<Date>(() =>
-    getLatestMonth(transactions),
-  );
+  const [month, setMonth] = React.useState<Date>(new Date());
 
   // OPTIONAL (jotai): clear selected category when changing month
   const clearSelected = useSetAtom(selectedCategoryAtom);

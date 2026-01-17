@@ -166,7 +166,6 @@ export default function RecordsScreen(): React.ReactElement {
         visible={selectedTxn !== null}
         txn={selectedTxn}
         onClose={closeTxn}
-        // TODO: optional later:
         onDelete={(t) => {
           deleteTransaction(t.id);
           closeTxn();

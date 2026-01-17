@@ -18,8 +18,14 @@ import { BudgetCategoryCard } from "@/components/budgets/categoryCard";
 import { NotBudgetedRow } from "@/components/budgets/notBudgetRow";
 import { BudgetEditorModal } from "@/components/budgets/editorModal";
 
-import { useAtom } from "jotai";
-import { CategoriesAtom } from "@/contexts/init";
+import { useAtom, useSetAtom } from "jotai";
+import {
+  CategoriesAtom,
+  TransactionsAtom,
+  BudgetsAtom,
+  UpsertBudgetAtom,
+  DeleteBudgetAtom,
+} from "@/contexts/init";
 
 export type BudgetedCategory = {
   category: string;
@@ -27,8 +33,6 @@ export type BudgetedCategory = {
   spent: number; // positive number (abs spent)
   currency: CurrencyCode;
 };
-
-type BudgetMonthStore = Record<string, BudgetedCategory[]>;
 
 type EditorState =
   | { open: false }
@@ -44,22 +48,48 @@ export default function BudgetsScreen(): React.ReactElement {
   const theme = useTheme();
 
   const [categories] = useAtom(CategoriesAtom);
+  const [txns] = useAtom(TransactionsAtom);
+  const [allBudgets] = useAtom(BudgetsAtom);
+
+  const upsertBudget = useSetAtom(UpsertBudgetAtom);
+  const deleteBudget = useSetAtom(DeleteBudgetAtom);
 
   const [cursor, setCursor] = React.useState(() => startOfMonth(new Date()));
-  const key = monthKey(cursor);
+  const monthKey = monthKeyInt(cursor);
 
-  // Store budgets by month key so navbar month change swaps the list
-  const [budgetsByMonth, setBudgetsByMonth] = React.useState<BudgetMonthStore>(
-    () => ({
-      // sample month data: current month gets your demo budgets
-      [monthKey(startOfMonth(new Date()))]: [
-        { category: "Drinks", limit: 100, spent: 35.2, currency: "SGD" },
-        { category: "Shopping", limit: 200, spent: 96.54, currency: "SGD" },
-      ],
-    }),
-  );
+  // month time range [start, end)
+  const { startMs, endMs } = React.useMemo(() => {
+    const start = startOfMonth(cursor).getTime();
+    const end = addMonths(cursor, 1).getTime();
+    return { startMs: start, endMs: end };
+  }, [cursor]);
 
-  const budgets = budgetsByMonth[key] ?? [];
+  // sum abs(expenses) by category for this month
+  const spentByCategory = React.useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const t of txns) {
+      const ts = t.occurredAt.getTime();
+      if (ts < startMs || ts >= endMs) continue;
+      if (t.amount >= 0) continue; // only expenses
+      m[t.category] = (m[t.category] ?? 0) + Math.abs(t.amount);
+    }
+    return m;
+  }, [txns, startMs, endMs]);
+
+  // budgets for this month
+  const budgets = React.useMemo(() => {
+    const monthBudgets = allBudgets.filter((b) => b.monthKey === monthKey);
+    const currency: CurrencyCode = "SGD"; // pick your app default
+
+    return monthBudgets.map(
+      (b): BudgetedCategory => ({
+        category: b.category,
+        limit: b.amount,
+        spent: spentByCategory[b.category] ?? 0,
+        currency,
+      }),
+    );
+  }, [allBudgets, monthKey, spentByCategory]);
 
   const budgetedCategorySet = React.useMemo(() => {
     return new Set(budgets.map((b) => b.category));
@@ -112,14 +142,10 @@ export default function BudgetsScreen(): React.ReactElement {
   const closeEditor = React.useCallback(() => setEditor({ open: false }), []);
 
   const removeBudget = React.useCallback(
-    (category: string) => {
-      setBudgetsByMonth((prev) => {
-        const list = prev[key] ?? [];
-        const nextList = list.filter((b) => b.category !== category);
-        return { ...prev, [key]: nextList };
-      });
+    async (category: string) => {
+      await deleteBudget({ category, monthKey });
     },
-    [key],
+    [deleteBudget, monthKey],
   );
 
   const onBudgetMore = React.useCallback(
@@ -139,7 +165,9 @@ export default function BudgetsScreen(): React.ReactElement {
               {
                 text: "Remove",
                 style: "destructive",
-                onPress: () => removeBudget(category),
+                onPress: () => {
+                  void removeBudget(category);
+                },
               },
             ],
           );
@@ -163,33 +191,19 @@ export default function BudgetsScreen(): React.ReactElement {
   );
 
   const submitBudget = React.useCallback(
-    (payload: { category: string; monthLabel: string; limit: number }) => {
-      setBudgetsByMonth((prev) => {
-        const list = prev[key] ?? [];
-        const exists = list.find((b) => b.category === payload.category);
-
-        const nextList = exists
-          ? list.map((b) =>
-              b.category === payload.category
-                ? { ...b, limit: payload.limit }
-                : b,
-            )
-          : [
-              ...list,
-              {
-                category: payload.category,
-                limit: payload.limit,
-                spent: 0,
-                currency: "SGD",
-              } satisfies BudgetedCategory,
-            ];
-
-        return { ...prev, [key]: nextList };
+    async (payload: {
+      category: string;
+      monthLabel: string;
+      limit: number;
+    }) => {
+      await upsertBudget({
+        category: payload.category,
+        monthKey,
+        amount: payload.limit,
       });
-
       closeEditor();
     },
-    [key, closeEditor],
+    [upsertBudget, monthKey, closeEditor],
   );
 
   return (
@@ -318,10 +332,9 @@ function addMonths(d: Date, delta: number): Date {
   return new Date(d.getFullYear(), d.getMonth() + delta, 1);
 }
 
-function monthKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
+// ✅ yyyymm
+function monthKeyInt(d: Date): number {
+  return d.getFullYear() * 100 + (d.getMonth() + 1);
 }
 
 function monthLabel(d: Date): string {

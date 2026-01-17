@@ -1,3 +1,5 @@
+import type { Budget } from "@/db/budgets";
+import { listBudgets, upsertBudget, deleteBudget } from "@/db/budgets";
 import type { MaterialTheme, OtherColorKey } from "@/constants/theme";
 import type { Category, Transaction } from "@/types/money";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,12 +43,14 @@ export const CategoriesAtom = atom<Category[]>([]);
 
 export const BootstrapAtom = atom(null, async (_get, set) => {
   await initDb();
-  const [cats, txns] = await Promise.all([
+  const [cats, txns, budgets] = await Promise.all([
     listCategories(),
     listTransactions(),
+    listBudgets(),
   ]);
   set(CategoriesAtom, cats);
   set(TransactionsAtom, txns);
+  set(BudgetsAtom, budgets);
 });
 
 export const RefreshCategoriesAtom = atom(null, async (_get, set) => {
@@ -120,3 +124,46 @@ export function categoryMeta(theme: MaterialTheme, categoryName: string) {
     iconName: hit.iconName,
   };
 }
+
+export const BudgetsAtom = atom<Budget[]>([]);
+
+export const RefreshBudgetsAtom = atom(null, async (_get, set) => {
+  set(BudgetsAtom, await listBudgets());
+});
+
+export const UpsertBudgetAtom = atom(
+  null,
+  async (
+    _get,
+    set,
+    input: { category: string; monthKey: number; amount: number },
+  ) => {
+    const saved = await upsertBudget(input);
+
+    set(BudgetsAtom, (prev) => {
+      const next = prev.filter(
+        (b) =>
+          !(b.category === saved.category && b.monthKey === saved.monthKey),
+      );
+      next.push(saved);
+      next.sort(
+        (a, b) =>
+          b.monthKey - a.monthKey || a.category.localeCompare(b.category),
+      );
+      return next;
+    });
+  },
+);
+
+export const DeleteBudgetAtom = atom(
+  null,
+  async (_get, set, input: { category: string; monthKey: number }) => {
+    await deleteBudget(input);
+    set(BudgetsAtom, (prev) =>
+      prev.filter(
+        (b) =>
+          !(b.category === input.category && b.monthKey === input.monthKey),
+      ),
+    );
+  },
+);
