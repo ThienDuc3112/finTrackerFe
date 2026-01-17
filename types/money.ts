@@ -25,7 +25,7 @@ export type Transaction = {
   aiComment?: string;
 };
 
-type TxnInput = {
+export type TxnInput = {
   amount: number;
   currency: string;
   category?: string | null | undefined;
@@ -34,3 +34,19 @@ type TxnInput = {
   merchant?: string | null | undefined;
   note: string;
 };
+
+export const CURRENCIES = ["SGD", "USD", "MYR"] as const;
+export const METHODS = ["Card", "Cash", "Transfer"] as const;
+export const CATEGORIES = [
+  "Food",
+  "Drinks",
+  "Transport",
+  "Shopping",
+  "Bills",
+  "Salary",
+  "Other",
+] as const;
+
+export type Currency = (typeof CURRENCIES)[number];
+export type Method = (typeof METHODS)[number];
+export type Category = (typeof CATEGORIES)[number];

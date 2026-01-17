@@ -20,7 +20,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="manual" options={{ headerShown: true }} />
+        <Stack.Screen name="manual" options={{ headerShown: false }} />
         <Stack.Screen name="scan" options={{ headerShown: true }} />
         <Stack.Screen name="speechToText" options={{ headerShown: true }} />
         <Stack.Screen

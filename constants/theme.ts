@@ -138,7 +138,7 @@ const mdLight: MaterialColors = {
 
   secondary: latte.blue,
   onSecondary: latte.crust,
-  secondaryContainer: latte.sky,
+  secondaryContainer: latte.lavender,
   onSecondaryContainer: latte.crust,
 
   background: latte.base,
