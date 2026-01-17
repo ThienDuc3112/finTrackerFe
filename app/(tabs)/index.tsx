@@ -6,6 +6,7 @@ import {
   type SectionListData,
   type SectionListRenderItemInfo,
 } from "react-native";
+import { router } from "expo-router";
 
 import { useTheme } from "@/hooks/use-theme";
 import type { MoneySummary, Transaction, TxnSection } from "@/types/money";
@@ -52,6 +53,17 @@ export default function RecordsScreen(): React.ReactElement {
 
   const transactions = useAtomValue(TransactionsAtom);
   const deleteTransaction = useSetAtom(DeleteTransactionAtom);
+
+  const onEditTxn = useCallback(
+    (txn: Transaction) => {
+      closeTxn();
+      router.push({
+        pathname: "/manual",
+        params: { id: txn.id },
+      });
+    },
+    [closeTxn],
+  );
 
   const monthTxns = useMemo(() => {
     return transactions
@@ -166,6 +178,7 @@ export default function RecordsScreen(): React.ReactElement {
         visible={selectedTxn !== null}
         txn={selectedTxn}
         onClose={closeTxn}
+        onEdit={onEditTxn}
         onDelete={(t) => {
           deleteTransaction(t.id);
           closeTxn();

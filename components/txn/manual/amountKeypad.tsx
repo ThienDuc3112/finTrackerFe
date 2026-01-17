@@ -7,12 +7,27 @@ import { PickerModal } from "./pickerModal";
 import { evalExpr } from "./utils";
 import { CURRENCIES } from "@/types/money";
 
-export function AmountKeypad(props: { theme: MaterialTheme; form: any }) {
-  const { theme, form } = props;
+function seedToExpr(seedAmount?: number): string {
+  if (!Number.isFinite(seedAmount) || !seedAmount || seedAmount <= 0) return "";
+  // keep 2dp, but trim trailing zeros like your display
+  const s = Number(seedAmount).toFixed(2);
+  return s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+}
+
+export function AmountKeypad(props: {
+  theme: MaterialTheme;
+  form: any;
+  seedAmount?: number;
+}) {
+  const { theme, form, seedAmount } = props;
   const styles = makeStyles(theme);
 
   const [pickCurrency, setPickCurrency] = React.useState(false);
-  const [expr, setExpr] = React.useState("");
+  const [expr, setExpr] = React.useState(() => seedToExpr(seedAmount));
+
+  React.useEffect(() => {
+    setExpr(seedToExpr(seedAmount));
+  }, [seedAmount]);
 
   const displayAmount = React.useMemo(() => {
     if (!expr) return "0";
