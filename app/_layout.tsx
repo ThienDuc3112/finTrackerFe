@@ -11,6 +11,7 @@ import { useSetAtom } from "jotai";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { BootstrapAtom } from "@/contexts/init";
+import { RudeRemarkGate } from "@/components/rudeRemarks/rudeRemarkGate";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -39,6 +40,7 @@ export default function RootLayout() {
           <Stack.Screen name="scan" options={{ headerShown: true }} />
           <Stack.Screen name="speechToText" options={{ headerShown: true }} />
         </Stack>
+        <RudeRemarkGate />
         <StatusBar style="auto" />
       </ThemeProvider>
     </>

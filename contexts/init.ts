@@ -85,7 +85,7 @@ export const DeleteCategoryAtom = atom(
 
 export const UpsertTransactionAtom = atom(
   null,
-  async (_get, set, txn: Transaction) => {
+  async (get, set, txn: Transaction) => {
     await upsertTransaction(txn);
 
     set(TransactionsAtom, (prev) => {
@@ -94,6 +94,26 @@ export const UpsertTransactionAtom = atom(
       const idx = without.findIndex((t) => t.occurredAt.getTime() < ts);
       if (idx === -1) return [...without, txn];
       return [...without.slice(0, idx), txn, ...without.slice(idx)];
+    });
+
+    if (!get(RudeRemarkEnabledAtom)) return;
+
+    set(RudeRemarkGateAtom, { visible: true, phase: "loading", txnId: txn.id });
+
+    let remark = "";
+    try {
+      remark = await fetchRudeRemark(txn);
+    } catch {
+      remark = "Remark server is down. You're spared… temporarily.";
+    }
+
+    // show remark for 5s (forced)
+    set(RudeRemarkGateAtom, {
+      visible: true,
+      phase: "showing",
+      txnId: txn.id,
+      remark,
+      lockUntil: Date.now() + 5000,
     });
   },
 );
@@ -167,3 +187,49 @@ export const DeleteBudgetAtom = atom(
     );
   },
 );
+
+// 1) feature toggle atom (default ON for maximum annoyance)
+export const RudeRemarkEnabledAtom = atom<boolean>(true);
+
+export type RudeRemarkGateState =
+  | { visible: false }
+  | { visible: true; phase: "loading"; txnId: string }
+  | {
+      visible: true;
+      phase: "showing";
+      txnId: string;
+      remark: string;
+      lockUntil: number; // epoch ms
+    };
+
+// 2) global gate state
+export const RudeRemarkGateAtom = atom<RudeRemarkGateState>({ visible: false });
+
+// 3) call your backend to generate the rude remark
+async function fetchRudeRemark(txn: Transaction): Promise<string> {
+  const payload = {
+    id: txn.id,
+    amount: txn.amount,
+    currency: txn.currency,
+    category: txn.category,
+    method: txn.method,
+    occurredAt: txn.occurredAt.toISOString(),
+    merchant: txn.merchant ?? "",
+    note: txn.note ?? "",
+  };
+
+  const res = await fetch(
+    "https://finaunty-python.onrender.com/insert-transactions",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([payload]),
+    },
+  );
+
+  if (!res.ok) throw new Error(`rude-remark api failed: ${res.status}`);
+
+  const data = (await res.json()) as [{ aiComment?: string }];
+  const remark = data?.[0].aiComment?.trim();
+  return remark && remark.length ? remark : "No remark. Somehow that's worse.";
+}
