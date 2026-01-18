@@ -9,12 +9,17 @@ import {
 } from "react-native";
 import { useAtom } from "jotai";
 import { useTheme } from "@/hooks/use-theme";
-import { RudeRemarkGateAtom } from "@/contexts/init"; // <-- adjust path if needed
+import { RudeRemarkGateAtom } from "@/contexts/init";
+
+import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
 
 export function RudeRemarkGate(): React.ReactElement {
   const theme = useTheme();
   const [gate, setGate] = useAtom(RudeRemarkGateAtom);
   const [remainingMs, setRemainingMs] = React.useState(0);
+
+  const lastSpokenTxnIdRef = React.useRef<string | null>(null);
 
   // Tick countdown + auto close
   React.useEffect(() => {
@@ -42,6 +47,56 @@ export function RudeRemarkGate(): React.ReactElement {
     return () => sub.remove();
   }, [gate.visible]);
 
+  React.useEffect(() => {
+    if (!(gate.visible && gate.phase === "showing")) return;
+
+    if (lastSpokenTxnIdRef.current === gate.txnId) return;
+    lastSpokenTxnIdRef.current = gate.txnId;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Play through speaker, and play even when iOS silent switch is on.
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true, // lower other audio
+          playThroughEarpieceAndroid: false, // speaker
+        });
+      } catch {
+        // ignore
+      }
+
+      if (cancelled) return;
+
+      // stop anything ongoing and SHOUT
+      Speech.stop();
+      Speech.speak(`HEY! ${gate.remark}`, {
+        rate: 0.92, // slightly slower = more "shouty"
+        pitch: 1.25, // higher pitch feels more aggressive
+        language: "en-US",
+      });
+
+      // Optional extra-annoying: repeat once after a short delay
+      // setTimeout(() => {
+      //   Speech.stop();
+      //   Speech.speak(gate.remark, { rate: 0.9, pitch: 1.2, language: "en-US" });
+      // }, 1200);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gate.visible, (gate as any)?.phase, (gate as any)?.txnId]);
+
+  // ✅ Stop speaking when the modal closes
+  React.useEffect(() => {
+    if (!gate.visible) {
+      lastSpokenTxnIdRef.current = null;
+      Speech.stop();
+    }
+  }, [gate.visible]);
+
   const isLocked =
     gate.visible && (gate.phase === "loading" || remainingMs > 0);
 
@@ -54,7 +109,6 @@ export function RudeRemarkGate(): React.ReactElement {
       animationType="fade"
       statusBarTranslucent
       onRequestClose={() => {
-        // Android back / close gesture: ignore while locked
         if (!isLocked) setGate({ visible: false });
       }}
     >
@@ -70,7 +124,7 @@ export function RudeRemarkGate(): React.ReactElement {
           ]}
         >
           <Text style={[styles.title, { color: theme.colors.onSurface }]}>
-            🧾 Financial Accountability Time
+            📢 SHAME ALERT
           </Text>
 
           {gate.phase === "loading" ? (
@@ -87,8 +141,9 @@ export function RudeRemarkGate(): React.ReactElement {
             </View>
           ) : (
             <>
+              {/* make it look like a "shout" */}
               <Text style={[styles.remark, { color: theme.colors.error }]}>
-                {gate.remark}
+                {gate.remark?.toUpperCase()}
               </Text>
 
               <Text
@@ -98,7 +153,7 @@ export function RudeRemarkGate(): React.ReactElement {
                 ]}
               >
                 {remainingMs > 0
-                  ? `No skipping. ${Math.ceil(remainingMs / 1000)}s`
+                  ? `NO SKIPPING. ${Math.ceil(remainingMs / 1000)}s`
                   : ""}
               </Text>
             </>
@@ -125,7 +180,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "900",
+    letterSpacing: 0.8,
   },
   body: {
     fontSize: 14,
@@ -134,14 +190,15 @@ const styles = StyleSheet.create({
   },
   remark: {
     marginTop: 14,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "900",
     textAlign: "center",
+    letterSpacing: 0.6,
   },
   countdown: {
     marginTop: 10,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "800",
     textAlign: "center",
   },
 });

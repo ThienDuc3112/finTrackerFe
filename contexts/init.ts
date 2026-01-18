@@ -114,7 +114,7 @@ export const UpsertTransactionAtom = atom(
       phase: "showing",
       txnId: txn.id,
       remark,
-      lockUntil: Date.now() + 5000,
+      lockUntil: Date.now() + 7000,
     });
   },
 );
