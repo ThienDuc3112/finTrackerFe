@@ -4,7 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import type { MaterialTheme } from "@/constants/theme";
 import type { Transaction } from "@/types/money";
-import { categoryMeta } from "@/contexts/init";
+import { useAtomValue } from "jotai";
+import { CategoryMetaAtom } from "@/contexts/init";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -62,7 +63,8 @@ export function TransactionSummaryModal({
   const headerBg = isExpense ? theme.colors.error : theme.colors.success;
   const headerFg = isExpense ? theme.colors.onError : theme.colors.onSuccess;
 
-  const cat = categoryMeta(theme, txn.category);
+  const getMeta = useAtomValue(CategoryMetaAtom);
+  const cat = getMeta(theme, txn.category);
   const noteText = txn.note?.trim() || txn.merchant?.trim() || "No notes";
 
   return (

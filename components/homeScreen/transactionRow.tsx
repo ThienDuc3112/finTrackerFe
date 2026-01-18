@@ -3,7 +3,8 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
 import type { Transaction } from "@/types/money";
-import { categoryMeta } from "@/contexts/init";
+import { CategoryMetaAtom } from "@/contexts/init";
+import { useAtomValue } from "jotai";
 
 type Props = {
   theme: MaterialTheme;
@@ -12,7 +13,8 @@ type Props = {
 };
 
 export function TransactionRow({ theme, item, onPress }: Props) {
-  const meta = categoryMeta(theme, item.category);
+  const getMeta = useAtomValue(CategoryMetaAtom);
+  const meta = getMeta(theme, item.category);
 
   return (
     <Pressable

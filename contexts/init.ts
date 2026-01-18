@@ -48,6 +48,7 @@ export const BootstrapAtom = atom(null, async (_get, set) => {
     listTransactions(),
     listBudgets(),
   ]);
+  console.log("\nbootstrap\n", cats, txns, budgets);
   set(CategoriesAtom, cats);
   set(TransactionsAtom, txns);
   set(BudgetsAtom, budgets);
@@ -133,16 +134,36 @@ export function resolveCategoryColor(
   return theme.colors.otherColors[colorKey];
 }
 
-export function categoryMeta(theme: MaterialTheme, categoryName: string) {
-  const hit =
-    DEFAULT_CATEGORIES.find((c) => c.name === categoryName) ??
-    DEFAULT_CATEGORIES.find((c) => c.name === "Other") ??
-    DEFAULT_CATEGORIES[0];
+export const CategoryMetaAtom = atom((get) => {
+  const cats = get(CategoriesAtom);
+  return (theme: MaterialTheme, categoryName: string) =>
+    categoryMeta(theme, categoryName, cats);
+});
 
-  return {
-    color: resolveCategoryColor(theme, hit.colorKey),
-    iconName: hit.iconName,
-  };
+function isOtherColorKey(
+  theme: MaterialTheme,
+  key: string,
+): key is OtherColorKey {
+  return Object.prototype.hasOwnProperty.call(theme.colors.otherColors, key);
+}
+function categoryMeta(
+  theme: MaterialTheme,
+  categoryName: string,
+  categories: readonly Category[],
+) {
+  const hit =
+    categories.find((c) => c.name === categoryName) ??
+    categories.find((c) => c.name === "Other");
+
+  // If DB is missing the category (or missing "Other"), fall back to safe theme values.
+  const iconName = (hit?.iconName ?? "pricetag") as IoniconName;
+
+  const rawKey = hit?.colorKey ?? "";
+  const color = isOtherColorKey(theme, rawKey)
+    ? resolveCategoryColor(theme, rawKey)
+    : theme.colors.primary;
+
+  return { color, iconName };
 }
 
 export const BudgetsAtom = atom<Budget[]>([]);

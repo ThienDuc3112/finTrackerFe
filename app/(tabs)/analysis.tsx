@@ -23,19 +23,8 @@ type CategoryAgg = {
   pct: number; // 0..1
 };
 
-function startOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
 function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
-}
-
-function getLatestMonth(txns: Transaction[]): Date {
-  if (txns.length === 0) return startOfMonth(new Date());
-  let max = txns[0].occurredAt;
-  for (const t of txns) if (t.occurredAt > max) max = t.occurredAt;
-  return startOfMonth(max);
 }
 
 function buildExpenseByCategory(

@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
-import { categoryMeta } from "@/contexts/init";
+import { useAtomValue } from "jotai";
+import { CategoryMetaAtom } from "@/contexts/init";
 
 export type BudgetEditorPayload = {
   category: string;
@@ -55,7 +56,8 @@ export function BudgetEditorModal({
     return n;
   }, [text]);
 
-  const meta = categoryMeta(theme, category);
+  const getMeta = useAtomValue(CategoryMetaAtom);
+  const meta = getMeta(theme, category);
 
   const submit = React.useCallback(() => {
     if (parsed == null) return;

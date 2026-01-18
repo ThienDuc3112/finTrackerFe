@@ -2,7 +2,8 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
-import { categoryMeta } from "@/contexts/init";
+import { CategoryMetaAtom } from "@/contexts/init";
+import { useAtomValue } from "jotai";
 
 type Props = {
   theme: MaterialTheme;
@@ -15,7 +16,8 @@ export function NotBudgetedRow({
   category,
   onSetBudget,
 }: Props): React.ReactElement {
-  const meta = categoryMeta(theme, category);
+  const getMeta = useAtomValue(CategoryMetaAtom);
+  const meta = getMeta(theme, category);
 
   return (
     <View style={[styles.row, { paddingHorizontal: theme.spacing.md }]}>

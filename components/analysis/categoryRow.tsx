@@ -2,59 +2,30 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
-import type { ComponentProps } from "react";
-
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
+import { CategoryMetaAtom } from "@/contexts/init";
+import { useAtomValue } from "jotai";
 
 type Props = {
   theme: MaterialTheme;
   category: string;
   amountText: string;
   pct: number; // 0..1
-  color: string;
 
   selected?: boolean;
   onPress?: () => void;
 };
-
-function iconForCategory(category: string): IoniconName {
-  switch (category) {
-    case "Shopping":
-      return "cart";
-    case "Food":
-      return "restaurant";
-    case "Drinks":
-      return "wine";
-    case "Grocery":
-    case "Groceries":
-      return "basket";
-    case "Transportation":
-      return "bus";
-    case "Entertainment":
-      return "film";
-    case "Bills":
-      return "receipt";
-    case "Health":
-      return "medkit";
-    case "Transfer":
-      return "swap-horizontal";
-    case "Income":
-      return "cash";
-    default:
-      return "pricetag";
-  }
-}
 
 export function CategoryRow({
   theme,
   category,
   amountText,
   pct,
-  color,
   selected = false,
   onPress,
 }: Props): React.ReactElement {
   const pctText = `${(pct * 100).toFixed(2)}%`;
+  const getMeta = useAtomValue(CategoryMetaAtom);
+  const meta = getMeta(theme, category);
 
   return (
     <Pressable
@@ -75,11 +46,11 @@ export function CategoryRow({
         <View
           style={[
             styles.iconWrap,
-            { backgroundColor: color, borderRadius: theme.radius.pill },
+            { backgroundColor: meta.color, borderRadius: theme.radius.pill },
           ]}
         >
           <Ionicons
-            name={iconForCategory(category)}
+            name={meta.iconName}
             size={22}
             color={theme.colors.onPrimary}
           />

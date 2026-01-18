@@ -1,3 +1,4 @@
+import { OtherColorKey } from "@/constants/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { ComponentProps } from "react";
 
@@ -47,6 +48,6 @@ export type Method = (typeof METHODS)[number];
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 export type Category = {
   name: string;
-  colorKey: string;
+  colorKey: OtherColorKey;
   iconName: IoniconName;
 };

@@ -66,7 +66,7 @@ export function ExpenseOverview({
     [byCategory, theme],
   );
 
-  const [chartW, setChartW] = React.useState(0);
+  const [chartW, setChartW] = React.useState(140);
 
   // keep donut nicely sized inside its column
   const donutSize = Math.max(140, Math.min(chartW, 240)); // tweak bounds to taste
@@ -171,14 +171,13 @@ export function ExpenseOverview({
         }}
       />
 
-      {byCategory.map((c, idx) => (
+      {byCategory.map((c) => (
         <CategoryRow
           key={c.category}
           theme={theme}
           category={c.category}
           amountText={formatMoney(currency, c.amountSigned)}
           pct={c.pct}
-          color={categoryColor(theme, idx)}
           selected={selected === c.category}
           onPress={() => onSelect(c.category)}
         />
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
   legendSwatch: { width: 14, height: 14 },
   legendText: { fontSize: 14, fontWeight: "700" },
   chartCol: {
-    flex: 1,
+    // flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -4,8 +4,8 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import type { MaterialTheme } from "@/constants/theme";
 import type { BudgetedCategory } from "@/app/(tabs)/budgets";
 import { BudgetProgressBar } from "@/components/budgets/progressBar";
-import { categoryMeta, TransactionsAtom } from "@/contexts/init";
-import { useAtom } from "jotai";
+import { CategoryMetaAtom, TransactionsAtom } from "@/contexts/init";
+import { useAtom, useAtomValue } from "jotai";
 
 function isSameMonth(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
@@ -44,7 +44,8 @@ export function BudgetCategoryCard({
   const isOver = spent > item.limit;
   const pct = item.limit <= 0 ? 0 : Math.min(spent / item.limit, 1);
 
-  const meta = categoryMeta(theme, item.category);
+  const getMeta = useAtomValue(CategoryMetaAtom);
+  const meta = getMeta(theme, item.category);
 
   return (
     <View

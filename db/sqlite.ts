@@ -1,24 +1,17 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Category } from "@/types/money";
 import * as SQLite from "expo-sqlite";
 import type { SQLiteDatabase } from "expo-sqlite";
-import { ComponentProps } from "react";
-
-type IoniconName = ComponentProps<typeof Ionicons>["name"];
-
-export type Category = {
-  name: string;
-  iconName: IoniconName;
-  color: string; // hex string, etc
-};
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { name: "Food", iconName: "restaurant", color: "#E78284" },
-  { name: "Drinks", iconName: "cafe", color: "#EA999C" },
-  { name: "Transport", iconName: "bus", color: "#8AADF4" },
-  { name: "Shopping", iconName: "bag", color: "#F5A97F" },
-  { name: "Bills", iconName: "receipt", color: "#A6DA95" },
-  { name: "Salary", iconName: "cash", color: "#A6DA95" },
-  { name: "Other", iconName: "apps", color: "#CAD3F5" },
+  { name: "Drinks", iconName: "wine", colorKey: "peach" },
+  { name: "Shopping", iconName: "cart", colorKey: "lavender" },
+  { name: "Bills", iconName: "receipt", colorKey: "sapphire" },
+  { name: "Food", iconName: "restaurant", colorKey: "red" },
+  { name: "Transport", iconName: "bus", colorKey: "blue" },
+  { name: "Entertainment", iconName: "film", colorKey: "mauve" },
+  { name: "Groceries", iconName: "cart", colorKey: "green" },
+  { name: "Health", iconName: "bandage", colorKey: "teal" },
+  { name: "Other", iconName: "pricetag", colorKey: "sky" },
 ];
 
 let dbPromise: Promise<SQLiteDatabase> | null = null;
@@ -40,7 +33,7 @@ async function seedCategoriesIfEmpty(db: SQLiteDatabase, cats: Category[]) {
         `INSERT INTO categories (name, icon_name, color) VALUES (?, ?, ?)`,
         c.name,
         c.iconName,
-        c.color,
+        c.colorKey,
       );
     }
   });
